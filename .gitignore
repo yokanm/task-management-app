@@ -1,0 +1,12 @@
+node_modules/
+## Logs
+.env
+node_modules
+dist
+.env
+logs
+docs
+*.log
+.claude
+npm-debug.log*
+scripts

@@ -1,0 +1,32 @@
+{
+  "name": "task-management-app",
+  "version": "1.0.0",
+  "description": "Full-stack task management app - Learning project",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "frontend:install": "cd frontend && npm install",
+    "backend:install": "cd backend && npm install",
+    "install:all": "npm run frontend:install && npm run backend:install",
+    "log": "node scripts/daily-log.js",
+    "daily": "node scripts/daily-log.js",
+    "start": "expo start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "keywords": [
+    "react-native",
+    "nodejs",
+    "express",
+    "learning-project"
+  ],
+  "author": "Odun_kanmi",
+  "license": "MIT"
+}
