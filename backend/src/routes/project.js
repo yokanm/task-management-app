@@ -12,7 +12,7 @@ import {
   projectIdSchema,
   updateProjectSchema,
 } from '../validations/project.validation.js';
-import validate from '../middleware/validateMiddleware.js';
+import {validate} from '../middleware/validateMiddleware.js';
 
 const router = Router();
 

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import Users from '../models/users.model.js';
 import crypto from 'crypto';
-import { generateToken } from '../utils/generateToken.js';
+import { generateRefreshToken, generateToken, verifyRefreshToken } from '../utils/generateToken.js';
 
 /**
  * @desc    Register new user
@@ -210,13 +210,13 @@ const forgotPassword = async (req, res) => {
         // Create reset URL
         const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-        // Send email (implement this function based on your email service)
-        await sendPasswordResetEmail(user.email, resetURL);
+        // // Send email (implement this function based on your email service)
+        // await sendPasswordResetEmail(user.email, resetURL);
 
-        res.status(200).json({
-            success: true,
-            message: 'Password reset link sent to your email'
-        });
+        // res.status(200).json({
+        //     success: true,
+        //     message: 'Password reset link sent to your email'
+        // });
 
     } catch (error) {
         console.error('Forgot password error:', error);

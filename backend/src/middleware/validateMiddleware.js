@@ -46,7 +46,7 @@ export const validate = (schema) => {
   };
 };
 
-export default validate;
+
 
 // export const validate = (schema) => {
 //     return (req, res, next) => {

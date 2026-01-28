@@ -11,7 +11,7 @@ import {
   createTaskGroupSchema,
   updateTaskGroupSchema,
 } from '../validations/taskGroup.validation.js';
-import validate from '../middleware/validateMiddleware.js';
+import {validate }from '../middleware/validateMiddleware.js';
 
 const router = Router();
 

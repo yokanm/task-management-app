@@ -17,14 +17,10 @@ import {
     updatePreferencesSchema,
     userIdSchema,
     deleteAccountSchema
-} from "../validations/user.validation.js";
+} from "../validations/user.valiadation.js";
 
 const router = Router();
 
-
-// ============================================
-// Profile Management Routes
-// ============================================
 
 /**
  * @route   GET /api/v1/users/profile
@@ -47,9 +43,6 @@ router.put('/api/v1/users/profile', authMiddleware, validate(updateProfileSchema
  */
 router.get('/api/v1/users/:id', authMiddleware, validate(userIdSchema), getUserById);
 
-// ============================================
-// Password Management Routes
-// ============================================
 
 /**
  * @route   PUT /api/v1/users/change-password
@@ -58,65 +51,7 @@ router.get('/api/v1/users/:id', authMiddleware, validate(userIdSchema), getUserB
  */
 router.put('/api/v1/users/change-password', authMiddleware, validate(changePasswordSchema), changePassword);
 
-// ============================================
-// Avatar Management Routes
-// ============================================
 
-/**
- * @route   POST /api/v1/users/upload-avatar
- * @desc    Upload profile picture
- * @access  Private
- */
-router.post(
-    '/api/v1/users/upload-avatar', 
-    authMiddleware,
-    upload.single('avatar'),
-    uploadAvatar
-);
-
-/**
- * @route   DELETE /api/v1/users/avatar
- * @desc    Delete profile picture
- * @access  Private
- */
-router.delete('/api/v1/users/avatar', authMiddleware, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        
-        const user = await Users.findById(userId);
-        
-        if (!user) {
-            return res.status(404).json({ 
-                success: false,
-                error: "User not found!" 
-            });
-        }
-
-        // Delete from cloudinary if exists
-        if (user.avatar && user.avatar.includes('cloudinary')) {
-            const publicId = user.avatar.split('/').pop().split('.')[0];
-            await deleteFromCloudinary(publicId);
-        }
-
-        user.avatar = '';
-        await user.save();
-
-        res.status(200).json({ 
-            success: true,
-            message: "Avatar deleted successfully"
-        });
-    } catch (error) {
-        console.error('Delete avatar error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Something went wrong!' 
-        });
-    }
-});
-
-// ============================================
-// Preferences Management Routes
-// ============================================
 
 /**
  * @route   GET /api/v1/users/preferences
@@ -132,9 +67,6 @@ router.get('/api/v1/users/preferences', authMiddleware, getPreferences);
  */
 router.put('/api/v1/users/preferences', authMiddleware, validate(updatePreferencesSchema), updatePreferences);
 
-// ============================================
-// Account Management Routes
-// ============================================
 
 /**
  * @route   DELETE /api/v1/users/account
