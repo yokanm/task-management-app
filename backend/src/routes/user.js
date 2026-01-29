@@ -17,7 +17,7 @@ import {
     updatePreferencesSchema,
     userIdSchema,
     deleteAccountSchema
-} from "../validations/user.valiadation.js";
+} from "../validations/user.validation.js";
 
 const router = Router();
 

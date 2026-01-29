@@ -21,10 +21,6 @@ const userSchema = new Schema(
       type: String,
       default: '',
     },
-    isEmailVerified: {
-        type: Boolean,
-        default: false
-    },
     
     // Password reset
     resetPasswordToken: {

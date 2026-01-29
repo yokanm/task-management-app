@@ -19,9 +19,9 @@ const projectSchema = new Schema(
     },
 
     taskGroup: {
-      type: String,
-      enum: ['Work', 'Personal', 'Study', 'Other'],
-      default: 'Work',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TaskGroup',
+      required: true
     },
     startDate: {
       type: Date,

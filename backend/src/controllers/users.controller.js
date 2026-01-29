@@ -144,14 +144,6 @@ const changePassword = async (req, res) => {
             });
         }
 
-                    // // Check if user registered with OAuth
-                    // if (user.authProvider !== 'local') {
-                    //     return res.status(400).json({
-                    //         success: false,
-                    //         error: `Account registered with ${user.authProvider}. Password change not available.`
-                    //     });
-                    // }
-
         // Verify current password
         const passwordMatch = await bcrypt.compare(currentPassword, user.password);
         if (!passwordMatch) {
@@ -283,28 +275,22 @@ const deleteAccount = async (req, res) => {
         }
 
         // Verify password for local accounts
-        if (user.authProvider === 'local') {
-            if (!password) {
-                return res.status(400).json({
-                    success: false,
-                    error: "Password is required to delete account!"
-                });
-            }
-
-            const passwordMatch = await bcrypt.compare(password, user.password);
-            if (!passwordMatch) {
-                return res.status(401).json({ 
-                    success: false,
-                    error: "Password is incorrect!" 
-                });
-            }
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                error: "Password is required to delete account!"
+            });
         }
 
-        // Delete avatar from cloudinary if exists
-        if (user.avatar && user.avatar.includes('cloudinary')) {
-            const publicId = user.avatar.split('/').pop().split('.')[0];
-            await deleteFromCloudinary(publicId);
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return res.status(401).json({ 
+                success: false,
+                error: "Password is incorrect!" 
+            });
         }
+
+       
 
         // Instead of deleting, deactivate the account (soft delete)
         user.isActive = false;
