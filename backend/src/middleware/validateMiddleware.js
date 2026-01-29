@@ -9,25 +9,24 @@ export const validate = (schema) => {
   return (req, res, next) => {
     try {
       // Validate the request data
-      const result = schema.parse({
+      schema.parse({
         body: req.body,
         params: req.params,
         query: req.query,
       });
 
-      // Replace request data with validated (and potentially transformed) data
-      req.body = result.body ?? req.body;
-      req.params = result.params ?? req.params;
-      req.query = result.query ?? req.query;
-
+      // If validation passes, just continue
+      // No need to reassign as Zod doesn't transform by default
+      // and req.query is read-only in Express 5
       next();
     } catch (error) {
       if (error instanceof ZodError) {
         // Format Zod errors into a user-friendly structure
-        const formattedErrors = error.errors.map((err) => ({
+        // Use error.issues instead of error.errors
+        const formattedErrors = error.issues?.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
-        }));
+        })) || [];
 
         return res.status(400).json({
           success: false,
@@ -45,29 +44,3 @@ export const validate = (schema) => {
     }
   };
 };
-
-
-
-// export const validate = (schema) => {
-//     return (req, res, next) => {
-//         try {
-//             const result = schema.parse({
-//                 body: req.body,
-//                 param: req.params,
-//                 query: req.query
-//             });
-
-//             // replace with validated data
-//             req.body = result.body ?? req.body;
-//             req.params = result.params ?? req.params;
-//             req.query = result.query ?? req.query;
-
-//             next()
-//          } catch (err) {
-//             return res.status(422).json({
-//                 success: false,
-//                 errors: err.errors
-//             });
-//         }
-//     }
-// }

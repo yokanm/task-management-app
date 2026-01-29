@@ -144,13 +144,13 @@ const changePassword = async (req, res) => {
             });
         }
 
-        // Check if user registered with OAuth
-        if (user.authProvider !== 'local') {
-            return res.status(400).json({
-                success: false,
-                error: `Account registered with ${user.authProvider}. Password change not available.`
-            });
-        }
+                    // // Check if user registered with OAuth
+                    // if (user.authProvider !== 'local') {
+                    //     return res.status(400).json({
+                    //         success: false,
+                    //         error: `Account registered with ${user.authProvider}. Password change not available.`
+                    //     });
+                    // }
 
         // Verify current password
         const passwordMatch = await bcrypt.compare(currentPassword, user.password);
@@ -245,10 +245,6 @@ const updatePreferences = async (req, res) => {
         user.preferences = {
             ...user.preferences.toObject(),
             ...preferences,
-            notifications: {
-                ...user.preferences.notifications.toObject(),
-                ...(preferences.notifications || {})
-            }
         };
 
         await user.save();
