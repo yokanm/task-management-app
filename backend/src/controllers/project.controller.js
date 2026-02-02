@@ -1,21 +1,32 @@
 import mongoose from 'mongoose';
 import Project from '../models/project.model.js';
 import Tasks from '../models/tasks.model.js';
+import TaskGroup from '../models/taskGroup.model.js';
 
 // @desc    Get all projects
 // @route   GET /api/projects
 // @access  Private
-
 const getProjects = async (req, res) => {
   try {
     const projects = await Project.find({ user: req.user.id }).sort({
       createdAt: -1,
     });
 
-    // Get task count for each project
+    // Get task count for each project (tasks directly under project OR in its task groups)
     const projectsWithTasks = await Promise.all(
       projects.map(async (project) => {
-        const taskCount = await Tasks.countDocuments({ project: project._id });
+        // Get all task groups for this project
+        const taskGroups = await TaskGroup.find({ _id: project.taskGroup });
+        const groupIds = taskGroups.map(g => g._id);
+
+        // Count tasks with parent pointing to this project OR its task groups
+        const taskCount = await Tasks.countDocuments({
+          $or: [
+            { 'parent.id': project._id, 'parent.type': 'Project' },
+            { 'parent.id': { $in: groupIds }, 'parent.type': 'TaskGroup' }
+          ]
+        });
+
         return {
           ...project.toObject(),
           taskCount,
@@ -41,7 +52,6 @@ const getProjects = async (req, res) => {
 // @access  Private
 const getProject = async (req, res) => {
   try {
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
@@ -49,7 +59,7 @@ const getProject = async (req, res) => {
       });
     }
 
-    const project = await Project.findById(req.params.id);
+    const project = await Project.findById(req.params.id).populate('taskGroup');
 
     if (!project) {
       return res.status(404).json({
@@ -65,8 +75,17 @@ const getProject = async (req, res) => {
       });
     }
 
-    // Get tasks for this project
-    const tasks = await Tasks.find({ project: project._id });
+    // Get all task groups for this project
+    const taskGroups = await TaskGroup.find({ _id: project.taskGroup });
+    const groupIds = taskGroups.map(g => g._id);
+
+    // Get tasks directly under project OR in its task groups
+    const tasks = await Tasks.find({
+      $or: [
+        { 'parent.id': project._id, 'parent.type': 'Project' },
+        { 'parent.id': { $in: groupIds }, 'parent.type': 'TaskGroup' }
+      ]
+    });
 
     res.status(200).json({
       success: true,
@@ -109,7 +128,6 @@ const createProject = async (req, res) => {
 // @access  Private
 const updateProject = async (req, res) => {
   try {
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
@@ -135,7 +153,7 @@ const updateProject = async (req, res) => {
 
     project = await Project.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true, // pls re-check this i have not the validation yet
+      runValidators: true,
     });
 
     res.status(200).json({
@@ -155,7 +173,6 @@ const updateProject = async (req, res) => {
 // @access  Private
 const deleteProject = async (req, res) => {
   try {
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
@@ -179,8 +196,27 @@ const deleteProject = async (req, res) => {
       });
     }
 
-    // Delete all tasks associated with this project
-    await Tasks.deleteMany({ project: project._id });
+    // NEW: Safer deletion with options
+    const tasksDirectlyUnderProject = await Tasks.find({
+      'parent.id': project._id,
+      'parent.type': 'Project'
+    });
+
+    if (tasksDirectlyUnderProject.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete project. ${tasksDirectlyUnderProject.length} task(s) are directly assigned to this project. Please reassign or delete them first.`,
+      });
+    }
+
+    // Delete all tasks in associated task groups (cascade delete)
+    const taskGroups = await TaskGroup.find({ _id: project.taskGroup });
+    const groupIds = taskGroups.map(g => g._id);
+    
+    await Tasks.deleteMany({
+      'parent.id': { $in: groupIds },
+      'parent.type': 'TaskGroup'
+    });
 
     await project.deleteOne();
 

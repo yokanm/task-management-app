@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { objectIdSchema, timeSchema } from '../utils/helperSchemas.js';
 
-// Create task validation schema
+// Create task validation schema with parent field
 export const createTaskSchema = z.object({
   body: z.object({
     title: z
@@ -45,9 +45,17 @@ export const createTaskSchema = z.object({
 
     dueTime: timeSchema.optional().nullable(),
 
-    project: objectIdSchema.optional().nullable(),
-
-    taskGroup: objectIdSchema.optional().nullable(),
+    // NEW: Parent field instead of separate project/taskGroup
+    parent: z.object({
+      id: objectIdSchema,
+      type: z.enum(['Project', 'TaskGroup'], {
+        errorMap: () => ({
+          message: 'Parent type must be either Project or TaskGroup',
+        }),
+      }),
+    }, {
+      required_error: 'Parent is required - task must belong to a Project or TaskGroup',
+    }),
 
     tags: z
       .array(z.string().trim().min(1, 'Tag cannot be empty'))
@@ -82,9 +90,11 @@ export const updateTaskSchema = z.object({
 
     dueTime: timeSchema.optional().nullable(),
 
-    project: objectIdSchema.optional().nullable(),
-
-    taskGroup: objectIdSchema.optional().nullable(),
+    // NEW: Parent field (optional for updates)
+    parent: z.object({
+      id: objectIdSchema,
+      type: z.enum(['Project', 'TaskGroup']),
+    }).optional(),
 
     tags: z
       .array(z.string().trim().min(1, 'Tag cannot be empty'))

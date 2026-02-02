@@ -7,8 +7,7 @@ import Tasks from '../models/tasks.model.js';
 const getTasks = async (req, res) => {
   try {
     const tasks = await Tasks.find({ user: req.user.id })
-      .populate('project', 'name logo')
-      .populate('taskGroup', 'name icon color')
+      .populate('parent.id', 'name logo icon color')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -38,8 +37,7 @@ const getTodayTasks = async (req, res) => {
       user: req.user.id,
       dueDate: { $gte: today, $lt: tomorrow },
     })
-      .populate('project', 'name logo')
-      .populate('taskGroup', 'name icon color')
+      .populate('parent.id', 'name logo icon color')
       .sort({ dueTime: 1 });
 
     res.status(200).json({
@@ -64,8 +62,7 @@ const getTasksByStatus = async (req, res) => {
       user: req.user.id,
       status: req.params.status,
     })
-      .populate('project', 'name logo')
-      .populate('taskGroup', 'name icon color')
+      .populate('parent.id', 'name logo icon color')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -126,7 +123,6 @@ const getTaskStats = async (req, res) => {
 // @access  Private
 const getTaskById = async (req, res) => {
   try {
-    // ✅ ADD THIS: Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({
         success: false,
@@ -135,8 +131,7 @@ const getTaskById = async (req, res) => {
     }
 
     const task = await Tasks.findById(req.params.id)
-      .populate('project', 'name logo description')
-      .populate('taskGroup', 'name icon color');
+      .populate('parent.id', 'name logo description icon color');
 
     if (!task) {
       return res.status(404).json({
@@ -188,7 +183,6 @@ const createTask = async (req, res) => {
 // @desc    Update task
 // @route   PUT /api/tasks/:id
 // @access  Private
-
 const updateTask = async (req, res) => {
   try {
     let task = await Tasks.findById(req.params.id);
@@ -259,7 +253,7 @@ const deleteTask = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {},
-      message: "Deleted successfully",
+      message: 'Deleted successfully',
     });
   } catch (err) {
     res.status(500).json({

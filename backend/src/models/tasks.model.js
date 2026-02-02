@@ -27,13 +27,18 @@ const taskSchema = new Schema(
     dueTime: {
       type: String,
     },
-    project: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Project',
-    },
-    taskGroup: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'TaskGroup',
+    // NEW: Single parent field instead of separate project/taskGroup
+    parent: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        refPath: 'parent.type'
+      },
+      type: {
+        type: String,
+        required: true,
+        enum: ['Project', 'TaskGroup']
+      }
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +63,10 @@ const taskSchema = new Schema(
     timestamps: true,
   }
 );
+
+// IMPORTANT: Add index for fast queries
+taskSchema.index({ 'parent.id': 1, 'parent.type': 1 });
+taskSchema.index({ user: 1, 'parent.id': 1 });
 
 const Tasks = mongoose.model('Tasks', taskSchema);
 

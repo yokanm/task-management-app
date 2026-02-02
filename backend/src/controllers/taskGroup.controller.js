@@ -12,12 +12,17 @@ const getTaskGroups = async (req, res) => {
     });
 
     // Calculate task count and completion percentage for each group
-
     const taskGroupsWithStats = await Promise.all(
       taskGroups.map(async (group) => {
-        const totalTasks = await Tasks.countDocuments({ taskGroup: group._id });
+        // NEW: Query using parent field
+        const totalTasks = await Tasks.countDocuments({
+          'parent.id': group._id,
+          'parent.type': 'TaskGroup'
+        });
+        
         const completedTasks = await Tasks.countDocuments({
-          taskGroup: group._id,
+          'parent.id': group._id,
+          'parent.type': 'TaskGroup',
           isCompleted: true,
         });
 
@@ -66,8 +71,12 @@ const getTaskGroup = async (req, res) => {
       });
     }
 
-    // Get tasks for this group
-    const tasks = await Tasks.find({ taskGroup: taskGroup._id });
+    // NEW: Get tasks using parent field
+    const tasks = await Tasks.find({
+      'parent.id': taskGroup._id,
+      'parent.type': 'TaskGroup'
+    });
+    
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((task) => task.isCompleted).length;
     const completionPercentage =
@@ -170,10 +179,11 @@ const deleteTaskGroup = async (req, res) => {
       });
     }
 
-    // FIXED: Check if any projects are using this task group
+    // Check if any projects are using this task group
     const projectCount = await Project.countDocuments({
       taskGroup: taskGroup._id,
     });
+    
     if (projectCount > 0) {
       return res.status(400).json({
         success: false,
@@ -181,13 +191,40 @@ const deleteTaskGroup = async (req, res) => {
       });
     }
 
-    // Remove taskGroup reference from all tasks
-    const taskCount = await Tasks.countDocuments({ taskGroup: taskGroup._id });
+    // NEW: Check tasks using parent field
+    const taskCount = await Tasks.countDocuments({
+      'parent.id': taskGroup._id,
+      'parent.type': 'TaskGroup'
+    });
+    
     if (taskCount > 0) {
+      // OPTION 1: Prevent deletion
       return res.status(400).json({
         success: false,
-        message: `Cannot delete task group. ${taskCount} task(s) are using this group. Please reassign or delete them first.`,
+        message: `Cannot delete task group. ${taskCount} task(s) belong to this group. Please reassign or delete them first.`,
       });
+
+      // OPTION 2: Move tasks to a default group or project (uncomment if preferred)
+      /*
+      // Find the first project using this task group
+      const project = await Project.findOne({ taskGroup: taskGroup._id });
+      
+      if (project) {
+        // Move all tasks to the parent project
+        await Tasks.updateMany(
+          { 'parent.id': taskGroup._id, 'parent.type': 'TaskGroup' },
+          { parent: { id: project._id, type: 'Project' } }
+        );
+      }
+      */
+
+      // OPTION 3: Cascade delete (uncomment if preferred)
+      /*
+      await Tasks.deleteMany({
+        'parent.id': taskGroup._id,
+        'parent.type': 'TaskGroup'
+      });
+      */
     }
 
     await taskGroup.deleteOne();
@@ -203,6 +240,7 @@ const deleteTaskGroup = async (req, res) => {
     });
   }
 };
+
 export {
   getTaskGroups,
   getTaskGroup,
