@@ -21,7 +21,7 @@ export default function SplashScreen() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, hasSeenOnboarding]);
+  }, [router, isAuthenticated, hasSeenOnboarding]);
 
   return (
     <View 

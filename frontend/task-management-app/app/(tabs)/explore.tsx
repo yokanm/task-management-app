@@ -1,23 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { useTheme } from '../../hooks/useTheme';
 import { tasksAPI } from '../../services/api';
 
 type TaskStatus = 'All' | 'To do' | 'In Progress' | 'Completed';
 
+interface Task {
+  _id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  dueDate?: string;
+  dueTime?: string;
+  parent: {
+    id: {
+      _id: string;
+      name: string;
+      color?: string;
+      icon?: string;
+    };
+    type: string;
+  };
+  isCompleted: boolean;
+}
+
 export default function TodayTasksScreen() {
-  const [tasks, setTasks] = useState([]);
-  const [filteredTasks, setFilteredTasks] = useState([]);
+  const router = useRouter();
+  const { colors } = useTheme();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<TaskStatus>('All');
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -25,7 +40,12 @@ export default function TodayTasksScreen() {
   }, []);
 
   useEffect(() => {
-    filterTasks();
+    if (selectedFilter === 'All') {
+      setFilteredTasks(tasks);
+    } else {
+      const filtered = tasks.filter((task) => task.status === selectedFilter);
+      setFilteredTasks(filtered);
+    }
   }, [tasks, selectedFilter]);
 
   const fetchTasks = async () => {
@@ -36,15 +56,6 @@ export default function TodayTasksScreen() {
       console.error('Error fetching tasks:', error);
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const filterTasks = () => {
-    if (selectedFilter === 'All') {
-      setFilteredTasks(tasks);
-    } else {
-      const filtered = tasks.filter((task: any) => task.status === selectedFilter);
-      setFilteredTasks(filtered);
     }
   };
 
@@ -83,49 +94,67 @@ export default function TodayTasksScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Completed':
-        return Colors.success;
+        return colors.success;
       case 'In Progress':
-        return Colors.warning;
+        return colors.warning;
       case 'To do':
-        return Colors.text.secondary;
+        return colors.info;
       default:
-        return Colors.text.secondary;
+        return colors.textSecondary;
     }
   };
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
       case 'Completed':
-        return '#E8F5E9';
+        return colors.success + '20';
       case 'In Progress':
-        return '#FFF3E0';
+        return colors.warning + '20';
       case 'To do':
-        return Colors.primaryLight;
+        return colors.info + '20';
       default:
-        return Colors.background.secondary;
+        return colors.cardBackground;
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'High':
+        return { name: 'alert-circle' as const, color: colors.error };
+      case 'Medium':
+        return { name: 'remove-circle' as const, color: colors.warning };
+      case 'Low':
+        return { name: 'checkmark-circle' as const, color: colors.success };
+      default:
+        return { name: 'ellipse' as const, color: colors.textSecondary };
     }
   };
 
   const filters: TaskStatus[] = ['All', 'To do', 'In Progress', 'Completed'];
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Today's Tasks</Text>
-        <TouchableOpacity>
-          <Ionicons name="notifications-outline" size={24} color={Colors.text.primary} />
-        </TouchableOpacity>
+      <View className="px-6 pt-12 pb-4">
+        <View className="flex-row items-center justify-between mb-4">
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+            Today&apos;s Tasks
+          </Text>
+          <TouchableOpacity>
+            <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Date Selector */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.dateScrollContent}
+        className="mb-4"
+        contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
       >
         {getWeekDates().map((date, index) => {
           const { month, day, dayName } = formatDate(date);
@@ -134,16 +163,28 @@ export default function TodayTasksScreen() {
           return (
             <TouchableOpacity
               key={index}
-              style={[styles.dateCard, isSelected && styles.dateCardSelected]}
-              onPress={() => setSelectedDate(date)}
+              className="items-center py-3 px-4 rounded-2xl min-w-16"
+              style={{
+                backgroundColor: isSelected ? colors.primary : colors.cardBackground,
+              }}
+              onPress={() => {}}
             >
-              <Text style={[styles.dateMonth, isSelected && styles.dateTextSelected]}>
+              <Text 
+                className="text-xs mb-1"
+                style={{ color: isSelected ? colors.white : colors.textSecondary }}
+              >
                 {month}
               </Text>
-              <Text style={[styles.dateDay, isSelected && styles.dateTextSelected]}>
+              <Text 
+                className="text-2xl font-bold mb-1"
+                style={{ color: isSelected ? colors.white : colors.textPrimary }}
+              >
                 {day}
               </Text>
-              <Text style={[styles.dateDayName, isSelected && styles.dateTextSelected]}>
+              <Text 
+                className="text-xs"
+                style={{ color: isSelected ? colors.white : colors.textSecondary }}
+              >
                 {dayName}
               </Text>
             </TouchableOpacity>
@@ -155,22 +196,23 @@ export default function TodayTasksScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersScrollContent}
+        className="mb-4"
+        contentContainerStyle={{ paddingHorizontal: 24, gap: 8 }}
       >
         {filters.map((filter) => (
           <TouchableOpacity
             key={filter}
-            style={[
-              styles.filterButton,
-              selectedFilter === filter && styles.filterButtonActive,
-            ]}
+            className="py-2.5 px-5 rounded-full"
+            style={{
+              backgroundColor: selectedFilter === filter ? colors.primary : colors.cardBackground,
+            }}
             onPress={() => setSelectedFilter(filter)}
           >
             <Text
-              style={[
-                styles.filterText,
-                selectedFilter === filter && styles.filterTextActive,
-              ]}
+              className="text-sm font-semibold"
+              style={{
+                color: selectedFilter === filter ? colors.white : colors.textPrimary,
+              }}
             >
               {filter}
             </Text>
@@ -180,218 +222,103 @@ export default function TodayTasksScreen() {
 
       {/* Tasks List */}
       <ScrollView
-        style={styles.tasksList}
-        contentContainerStyle={styles.tasksListContent}
+        className="flex-1 px-6"
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        showsVerticalScrollIndicator={false}
       >
         {filteredTasks.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="checkmark-circle-outline" size={64} color={Colors.text.disabled} />
-            <Text style={styles.emptyStateText}>No tasks for today</Text>
+          <View className="flex-1 items-center justify-center py-20">
+            <Ionicons name="checkmark-circle-outline" size={64} color={colors.textSecondary} />
+            <Text className="text-base mt-4" style={{ color: colors.textSecondary }}>
+              No tasks for today
+            </Text>
           </View>
         ) : (
-          filteredTasks.map((task: any) => (
-            <TouchableOpacity key={task._id} style={styles.taskItem}>
-              <View style={styles.taskLeft}>
-                <View style={[styles.taskIcon, { backgroundColor: task.project?.color || Colors.taskGroups.office }]}>
-                  <Ionicons name="briefcase" size={16} color={Colors.text.white} />
+          filteredTasks.map((task) => {
+            const parentProject = task.parent?.id;
+            const projectColor = parentProject?.color || colors.primary;
+            const priorityIcon = getPriorityIcon(task.priority);
+
+            return (
+              <TouchableOpacity
+                key={task._id}
+                className="mb-3 p-4 rounded-2xl"
+                style={{ backgroundColor: colors.cardBackground }}
+                onPress={() => {/* Navigate to task detail */}}
+              >
+                {/* Header: Project Name */}
+                <View className="flex-row items-center mb-2">
+                  <View 
+                    className="w-8 h-8 rounded-lg items-center justify-center mr-2"
+                    style={{ backgroundColor: projectColor + '20' }}
+                  >
+                    <Ionicons 
+                      name={parentProject?.icon as any || 'briefcase'} 
+                      size={16} 
+                      color={projectColor} 
+                    />
+                  </View>
+                  <Text className="text-xs" style={{ color: colors.textSecondary }}>
+                    {parentProject?.name || 'No Project'}
+                  </Text>
+                  <View className="flex-1" />
+                  <Ionicons name={priorityIcon.name} size={16} color={priorityIcon.color} />
                 </View>
-                
-                <View style={styles.taskInfo}>
-                  <Text style={styles.taskProject}>{task.project?.name || 'No Project'}</Text>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
+
+                {/* Task Title */}
+                <Text 
+                  className="text-base font-semibold mb-1"
+                  style={{ color: colors.textPrimary }}
+                >
+                  {task.title}
+                </Text>
+
+                {/* Footer: Time and Status */}
+                <View className="flex-row items-center justify-between mt-2">
                   {task.dueTime && (
-                    <View style={styles.taskTime}>
-                      <Ionicons name="time-outline" size={14} color={Colors.text.secondary} />
-                      <Text style={styles.taskTimeText}>{task.dueTime}</Text>
+                    <View className="flex-row items-center">
+                      <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+                      <Text className="text-xs ml-1" style={{ color: colors.textSecondary }}>
+                        {task.dueTime}
+                      </Text>
                     </View>
                   )}
+                  
+                  <View 
+                    className="py-1 px-3 rounded-full"
+                    style={{ backgroundColor: getStatusBgColor(task.status) }}
+                  >
+                    <Text 
+                      className="text-xs font-semibold"
+                      style={{ color: getStatusColor(task.status) }}
+                    >
+                      {task.status === 'To do' ? 'To-do' : task.status}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              
-              <View style={[styles.taskStatus, { backgroundColor: getStatusBgColor(task.status) }]}>
-                <Text style={[styles.taskStatusText, { color: getStatusColor(task.status) }]}>
-                  {task.status}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
 
-      {/* Add Task FAB */}
-      <TouchableOpacity style={styles.fab}>
-        <Ionicons name="add" size={28} color={Colors.text.white} />
+      {/* Floating Action Button */}
+      <TouchableOpacity 
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full items-center justify-center shadow-lg"
+        style={{ 
+          backgroundColor: colors.primary,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+        }}
+        onPress={() => router.push('/(tabs)/add-task')}
+      >
+        <Ionicons name="add" size={28} color={colors.white} />
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background.primary,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.lg,
-    paddingTop: Spacing.xl,
-  },
-  headerTitle: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: 'bold',
-    color: Colors.text.primary,
-  },
-  
-  // Date Selector
-  dateScrollContent: {
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  dateCard: {
-    width: 70,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.background.secondary,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    gap: 4,
-  },
-  dateCardSelected: {
-    backgroundColor: Colors.primary,
-  },
-  dateMonth: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.text.secondary,
-  },
-  dateDay: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: 'bold',
-    color: Colors.text.primary,
-  },
-  dateDayName: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.text.secondary,
-  },
-  dateTextSelected: {
-    color: Colors.text.white,
-  },
-  
-  // Filters
-  filtersScrollContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.sm,
-  },
-  filterButton: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.background.secondary,
-    borderRadius: BorderRadius.full,
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.primary,
-  },
-  filterText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '500',
-    color: Colors.text.secondary,
-  },
-  filterTextActive: {
-    color: Colors.text.white,
-  },
-  
-  // Tasks List
-  tasksList: {
-    flex: 1,
-  },
-  tasksListContent: {
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  taskItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.background.secondary,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    ...Shadows.sm,
-  },
-  taskLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    flex: 1,
-  },
-  taskIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  taskInfo: {
-    flex: 1,
-  },
-  taskProject: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.text.secondary,
-    marginBottom: 2,
-  },
-  taskTitle: {
-    fontSize: Typography.fontSize.md,
-    fontWeight: '600',
-    color: Colors.text.primary,
-    marginBottom: 4,
-  },
-  taskTime: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  taskTimeText: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.text.secondary,
-  },
-  taskStatus: {
-    paddingVertical: 4,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-  },
-  taskStatusText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: '600',
-  },
-  
-  // Empty State
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Spacing['3xl'],
-  },
-  emptyStateText: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.text.secondary,
-    marginTop: Spacing.md,
-  },
-  
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: Spacing.xl,
-    right: Spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.lg,
-  },
-});

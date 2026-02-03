@@ -32,7 +32,9 @@ export default function SignInScreen() {
 
         setUser(user);
         setTokens(accessToken, refreshToken);
-        router.replace('/(tabs)');
+        
+        // Navigation will be handled by root layout
+        // router.replace('/(tabs)');
       } catch (error: any) {
         console.error('Login error:', error);
         const errorMessage = error.response?.data?.error || 'Login failed. Please try again.';
@@ -138,7 +140,7 @@ export default function SignInScreen() {
           <Text className="text-base" style={{ color: colors.textSecondary }}>
             Don&apos;t have an account?{' '}
           </Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
             <Text className="text-base font-semibold" style={{ color: colors.primary }}>
               Sign Up
             </Text>

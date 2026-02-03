@@ -1,15 +1,20 @@
 
-import { Text, View } from "react-native";
-import "./globals.css";
+import { Redirect } from 'expo-router';
+import { useAuthStore } from '../store/authStore';
+import './globals.css';
 
- 
- 
 export default function Index() {
-  return (
-    <View className="flex-1 items-center justify-center bg-red-600">
-      <Text className="text-xl font-bold text-orange-500">
-        Welcome to Nativewind!
-      </Text>
-    </View>
-  );
+  const { isAuthenticated, hasSeenOnboarding } = useAuthStore();
+  
+
+  // Redirect based on auth state
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)" />;
+  }
+
+  if (!hasSeenOnboarding) {
+    return <Redirect href="/(auth)/onboarding" />;
+  }
+
+  return <Redirect href="/(auth)/login" />;
 }

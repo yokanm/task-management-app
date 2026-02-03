@@ -35,19 +35,32 @@ export default function AddTaskScreen() {
     handleBlur,
     handleSubmit,
     isSubmitting,
-    setFieldValue,
   } = useFormValidation<TaskInput>({
     schema: taskSchema,
     onSubmit: async (data) => {
       try {
-        // Remove empty optional fields
-        const taskData = {
-          ...data,
+        // Prepare task data with correct parent structure for backend
+        const taskData: any = {
+          title: data.title,
           description: data.description || undefined,
+          status: data.status || 'To do',
+          priority: data.priority || 'Medium',
           dueDate: data.dueDate || undefined,
           dueTime: data.dueTime || undefined,
-          project: selectedProject || undefined,
         };
+
+        // Add parent field if project is selected
+        if (selectedProject) {
+          taskData.parent = {
+            id: selectedProject,
+            type: 'Project',
+          };
+        } else {
+          // You may need to handle tasks without a project differently
+          // For now, we'll require a project
+          Alert.alert('Error', 'Please select a project for this task');
+          return;
+        }
 
         await tasksAPI.createTask(taskData);
         
@@ -59,7 +72,8 @@ export default function AddTaskScreen() {
         ]);
       } catch (error: any) {
         console.error('Error creating task:', error);
-        Alert.alert('Error', error.response?.data?.message || 'Failed to create task');
+        const errorMessage = error.response?.data?.message || 'Failed to create task';
+        Alert.alert('Error', errorMessage);
       }
     },
     mode: 'onChange',
@@ -78,8 +92,8 @@ export default function AddTaskScreen() {
     }
   };
 
-  const priorities: Array<'Low' | 'Medium' | 'High'> = ['Low', 'Medium', 'High'];
-  const statuses: Array<'To do' | 'In Progress' | 'Completed'> = ['To do', 'In Progress', 'Completed'];
+  const priorities: ('Low' | 'Medium' | 'High')[] = ['Low', 'Medium', 'High'];
+  const statuses: ('To do' | 'In Progress' | 'Completed')[] = ['To do', 'In Progress', 'Completed'];
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
@@ -146,6 +160,49 @@ export default function AddTaskScreen() {
             <Text className="text-xs mt-1 ml-1" style={{ color: colors.error }}>
               {errors.description}
             </Text>
+          )}
+        </View>
+
+        {/* Project Selection - REQUIRED */}
+        <View className="mb-4">
+          <Text className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+            Project * {!selectedProject && <Text style={{ color: colors.error }}>(Required)</Text>}
+          </Text>
+          {projects.length === 0 ? (
+            <View 
+              className="p-4 rounded-xl"
+              style={{ backgroundColor: colors.inputBackground }}
+            >
+              <Text style={{ color: colors.textSecondary }}>
+                No projects available. Create a project first.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-2">
+              {projects.map((project) => (
+                <TouchableOpacity
+                  key={project._id}
+                  className="py-3 px-4 rounded-xl mr-2"
+                  style={{
+                    backgroundColor: selectedProject === project._id 
+                      ? colors.primary 
+                      : colors.inputBackground,
+                  }}
+                  onPress={() => setSelectedProject(project._id)}
+                >
+                  <Text 
+                    className="text-sm font-semibold"
+                    style={{ 
+                      color: selectedProject === project._id 
+                        ? colors.white 
+                        : colors.textPrimary 
+                    }}
+                  >
+                    {project.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           )}
         </View>
 
@@ -218,54 +275,6 @@ export default function AddTaskScreen() {
           )}
         </View>
 
-        {/* Project Selection */}
-        {projects.length > 0 && (
-          <View className="mb-4">
-            <Text className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-              Project (Optional)
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-2">
-              <TouchableOpacity
-                className="py-3 px-4 rounded-xl mr-2"
-                style={{
-                  backgroundColor: !selectedProject ? colors.primary : colors.inputBackground,
-                }}
-                onPress={() => setSelectedProject('')}
-              >
-                <Text 
-                  className="text-sm font-semibold"
-                  style={{ color: !selectedProject ? colors.white : colors.textPrimary }}
-                >
-                  No Project
-                </Text>
-              </TouchableOpacity>
-              {projects.map((project) => (
-                <TouchableOpacity
-                  key={project._id}
-                  className="py-3 px-4 rounded-xl mr-2"
-                  style={{
-                    backgroundColor: selectedProject === project._id 
-                      ? colors.primary 
-                      : colors.inputBackground,
-                  }}
-                  onPress={() => setSelectedProject(project._id)}
-                >
-                  <Text 
-                    className="text-sm font-semibold"
-                    style={{ 
-                      color: selectedProject === project._id 
-                        ? colors.white 
-                        : colors.textPrimary 
-                    }}
-                  >
-                    {project.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
         {/* Due Date & Time */}
         <View className="flex-row gap-4 mb-6">
           <View className="flex-1">
@@ -298,6 +307,7 @@ export default function AddTaskScreen() {
           title="Create Task"
           onPress={handleSubmit}
           isLoading={isSubmitting}
+          disabled={!selectedProject || isSubmitting}
         />
       </ScrollView>
     </View>
