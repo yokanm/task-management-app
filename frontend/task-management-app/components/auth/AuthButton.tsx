@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, TouchableOpacityProps, ViewStyle } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuthStore } from '@/store/authStore';
 
 interface AuthButtonProps extends TouchableOpacityProps {
   title: string;
@@ -19,6 +20,8 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   disabled,
   ...props
 }) => {
+
+  const {user, isLoading: isAuthLoading} = useAuthStore();
   const { colors } = useTheme();
 
   const getButtonStyle = () => {
@@ -81,7 +84,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.white : colors.primary} />
+        <ActivityIndicator color={variant === 'primary' ? colors.black : colors.primary} />
       ) : (
         <Text 
           className={`text-base font-semibold ${variant === 'text' ? 'text-sm' : ''}`}

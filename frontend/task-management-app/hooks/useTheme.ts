@@ -1,4 +1,4 @@
-import { useThemeStore, ThemeScheme, ThemeMode } from '../store/themeStore';
+import { useThemeStore } from '../store/themeStore';
 
 /**
  * Custom hook for accessing theme state and methods

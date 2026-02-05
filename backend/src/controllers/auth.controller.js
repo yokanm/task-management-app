@@ -46,9 +46,16 @@ const register = async (req, res) => {
     });
 
     await newUser.save();
-
+    
+    const token = generateToken(newUser._id, res); 
     // Consistent response format
     res.status(201).json({
+      token, 
+      user:{
+        id: newUser._id,
+        username: newUser.username,
+        email: newUser.email,
+      },
       success: true,
       message: 'User created successfully!',
     });

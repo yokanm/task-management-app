@@ -1,52 +1,50 @@
-import React from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
 import { AuthInput } from '../../components/auth/AuthInput';
 import { AuthButton } from '../../components/auth/AuthButton';
-import { authAPI } from '../../services/api';
-import { useFormValidation } from '../../hooks/useFormValidation';
-import { registerSchema, type RegisterInput } from '../../utils/validationSchemas';
+import { useAuthStore } from '@/store/authStore';
+import { registerSchema } from '@/validation/auth.validation';
 
-export default function SignUpScreen() {
-  const router = useRouter();
-  const { colors } = useTheme();
+export default function Register() {
+    const [userName, setUserName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    
 
-  const {
-    values,
-    errors,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    isSubmitting,
-  } = useFormValidation<RegisterInput>({
-    schema: registerSchema,
-    onSubmit: async (data) => {
-      try {
-        await authAPI.register({
-          username: data.username,
-          email: data.email,
-          password: data.password,
-        });
+    const router = useRouter();
+    const { colors } = useTheme();
+    const { register, isLoading } = useAuthStore();
 
-        Alert.alert(
-          'Success!',
-          'Your account has been created successfully. Please sign in.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/(auth)/sign-in'),
-            },
-          ]
-        );
-      } catch (error: any) {
-        console.error('Registration error:', error);
-        const errorMessage = error.response?.data?.error || 'Registration failed. Please try again.';
-        Alert.alert('Registration Failed', errorMessage);
-      }
-    },
-    mode: 'onChange',
-  });
+    const handleRegister = async () => {
+        // Validate with Zod
+        const result = registerSchema.safeParse({ username: userName, email, password });
+        
+        if (!result.success) {
+            const fieldErrors: Record<string, string> = {};
+            result.error.issues.forEach((error) => {
+                if (error.path[0]) fieldErrors[error.path[0] as string] = error.message;
+            });
+            setErrors(fieldErrors);
+            return;
+        }
+        
+        // Clear errors and submit
+        setErrors({});
+        const response = await register(userName, email, password);
+        
+        if (!response.success) {
+            Alert.alert('Registration Failed', response.error || 'Something went wrong');
+        } else {
+            Alert.alert('Success', 'Account created successfully!', [
+                { text: 'OK', onPress: () => router.replace('/(auth)/login') }
+            ]);
+        }
+      
+      // 
+    }
 
   return (
     <KeyboardAvoidingView
@@ -80,9 +78,12 @@ export default function SignUpScreen() {
           <AuthInput
             label="Username"
             placeholder="Choose a username"
-            value={values.username || ''}
-            onChangeText={(text) => handleChange('username', text)}
-            onBlur={() => handleBlur('username')}
+            value={userName}
+            onChangeText={(text) => {
+              setUserName(text);
+              if (errors.username) setErrors(prev => ({ ...prev, username: '' }));
+            }}
+            // onBlur={() => handleBlur('username')}
             error={errors.username}
             icon="person-outline"
             autoCapitalize="none"
@@ -92,9 +93,12 @@ export default function SignUpScreen() {
           <AuthInput
             label="Email"
             placeholder="Enter your email"
-            value={values.email || ''}
-            onChangeText={(text) => handleChange('email', text)}
-            onBlur={() => handleBlur('email')}
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+            }}
+            // onBlur={() => handleBlur('email')}
             error={errors.email}
             icon="mail-outline"
             keyboardType="email-address"
@@ -105,9 +109,12 @@ export default function SignUpScreen() {
           <AuthInput
             label="Password"
             placeholder="Create a password"
-            value={values.password || ''}
-            onChangeText={(text) => handleChange('password', text)}
-            onBlur={() => handleBlur('password')}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
+            }}
+            // onBlur={() => handleBlur('password')}
             error={errors.password}
             icon="lock-closed-outline"
             isPassword
@@ -115,47 +122,19 @@ export default function SignUpScreen() {
             autoComplete="password-new"
           />
 
-          <AuthInput
+          {/* <AuthInput
             label="Confirm Password"
             placeholder="Confirm your password"
-            value={values.confirmPassword || ''}
-            onChangeText={(text) => handleChange('confirmPassword', text)}
-            onBlur={() => handleBlur('confirmPassword')}
-            error={errors.confirmPassword}
+            value={isSetPasswordVisible.toString()}
+            onChangeText={(text) => setIsPasswordVisible(text)}
+            // onBlur={() => handleBlur('confirmPassword')}
+            // error={errors.confirmPassword}
             icon="lock-closed-outline"
             isPassword
             autoCapitalize="none"
             autoComplete="password-new"
-          />
-
-          {/* Password Requirements */}
-          <View 
-            className="p-3 rounded-lg mb-4"
-            style={{ backgroundColor: colors.cardBackground }}
-          >
-            <Text 
-              className="text-xs font-semibold mb-1"
-              style={{ color: colors.textSecondary }}
-            >
-              Password must contain:
-            </Text>
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              • At least 8 characters
-            </Text>
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              • One uppercase letter (A-Z)
-            </Text>
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              • One lowercase letter (a-z)
-            </Text>
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              • One number (0-9)
-            </Text>
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              • One special character (!@#$%^&*)
-            </Text>
-          </View>
-
+          /> */}
+         
           {/* Terms and Conditions */}
           <View className="mb-6">
             <Text className="text-sm text-center leading-5" style={{ color: colors.textSecondary }}>
@@ -173,8 +152,9 @@ export default function SignUpScreen() {
           {/* Sign Up Button */}
           <AuthButton
             title="Sign Up"
-            onPress={handleSubmit}
-            isLoading={isSubmitting}
+            onPress={handleRegister}
+            disabled={isLoading}
+            
           />
 
           {/* Divider */}
@@ -207,5 +187,5 @@ export default function SignUpScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  )
 }

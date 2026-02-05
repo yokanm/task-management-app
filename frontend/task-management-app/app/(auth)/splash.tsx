@@ -7,28 +7,25 @@ import { useAuthStore } from '../../store/authStore';
 export default function SplashScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { isAuthenticated, hasSeenOnboarding } = useAuthStore();
+  const { user, token } = useAuthStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (isAuthenticated) {
+      if (user && token) {
         router.replace('/(tabs)');
-      } else if (hasSeenOnboarding) {
-        router.replace('/(auth)/sign-in');
       } else {
         router.replace('/(auth)/onboarding');
       }
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [router, isAuthenticated, hasSeenOnboarding]);
+  }, [router, user, token]);
 
   return (
     <View 
       className="flex-1 justify-between items-center py-12"
       style={{ backgroundColor: colors.primary }}
     >
-      {/* Logo/Brand */}
       <View className="flex-1 justify-center items-center">
         <View 
           className="w-24 h-24 rounded-full justify-center items-center mb-6 shadow-lg"
@@ -62,12 +59,10 @@ export default function SplashScreen() {
         </Text>
       </View>
 
-      {/* Loading indicator */}
       <View className="mb-8">
         <ActivityIndicator size="large" color={colors.white} />
       </View>
 
-      {/* Footer */}
       <View className="items-center">
         <Text 
           className="text-sm opacity-70"

@@ -32,7 +32,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: () => {
             logout();
-            router.replace('/(auth)/sign-in');
+            router.replace('/(auth)/login');
           },
         },
       ]
@@ -123,10 +123,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        className="flex-1 pb-8"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView className="flex-1 pb-8" showsVerticalScrollIndicator={false}>
         {/* User Info Card */}
         <View 
           className="flex-row items-center mx-6 mb-6 p-4 rounded-2xl shadow-sm"

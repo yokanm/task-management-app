@@ -2,15 +2,12 @@ import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   Dimensions,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Typography, Spacing, BorderRadius } from '../../constants/theme';
-import { useAuthStore } from '../../store/authStore';
+import { useTheme } from '../../hooks/useTheme';
 import { AuthButton } from '../../components/auth/AuthButton';
 
 const { width } = Dimensions.get('window');
@@ -19,7 +16,7 @@ interface OnboardingSlide {
   id: string;
   title: string;
   description: string;
-  image: any; // In production, use actual images
+  image: any;
 }
 
 const slides: OnboardingSlide[] = [
@@ -27,7 +24,7 @@ const slides: OnboardingSlide[] = [
     id: '1',
     title: 'Stay organized. Get more done.',
     description: 'Organize your workflow, prioritize with ease, and accomplish more every day.',
-    image: null, // Replace with actual image from assets
+    image: null,
   },
   {
     id: '2',
@@ -45,7 +42,7 @@ const slides: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { setHasSeenOnboarding } = useAuthStore();
+  const { colors } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -65,38 +62,66 @@ export default function OnboardingScreen() {
   };
 
   const handleGetStarted = () => {
-    setHasSeenOnboarding(true);
-    router.replace('/(auth)/sign-in');
+    router.replace('/(auth)/login');
   };
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
-    <View style={styles.slide}>
-      {/* Image placeholder - Replace with actual illustration */}
-      <View style={styles.imageContainer}>
-        <View style={styles.imagePlaceholder}>
-          {/* Illustration of task management (plants, people working) */}
-          <View style={styles.illustrationCircle}>
-            <Text style={styles.illustrationText}>📋</Text>
+    <View style={{ width, flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+        <View style={{ width: 280, height: 280, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+            backgroundColor: colors.primary + '30',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 80 }}>📋</Text>
           </View>
         </View>
       </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
+      <View style={{ width: '100%', paddingBottom: 40 }}>
+        <Text style={{
+          fontSize: 28,
+          fontWeight: 'bold',
+          color: colors.textPrimary,
+          textAlign: 'center',
+          marginBottom: 16,
+        }}>
+          {item.title}
+        </Text>
+        <Text style={{
+          fontSize: 16,
+          color: colors.textSecondary,
+          textAlign: 'center',
+          lineHeight: 24,
+        }}>
+          {item.description}
+        </Text>
       </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Skip button */}
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <TouchableOpacity 
+        style={{
+          position: 'absolute',
+          top: 50,
+          right: 24,
+          zIndex: 10,
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+        }}
+        onPress={handleSkip}
+      >
+        <Text style={{ fontSize: 16, color: colors.textSecondary, fontWeight: '500' }}>
+          Skip
+        </Text>
       </TouchableOpacity>
 
-      {/* Slides */}
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -111,21 +136,27 @@ export default function OnboardingScreen() {
         keyExtractor={(item) => item.id}
       />
 
-      {/* Pagination dots */}
-      <View style={styles.pagination}>
+      <View style={{
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 24,
+      }}>
         {slides.map((_, index) => (
           <View
             key={index}
-            style={[
-              styles.dot,
-              index === currentIndex && styles.activeDot,
-            ]}
+            style={{
+              width: index === currentIndex ? 24 : 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: index === currentIndex ? colors.primary : colors.border,
+              marginHorizontal: 4,
+            }}
           />
         ))}
       </View>
 
-      {/* Buttons */}
-      <View style={styles.buttonContainer}>
+      <View style={{ paddingHorizontal: 40, paddingBottom: 40, gap: 16 }}>
         <AuthButton
           title={currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
           onPress={handleNext}
@@ -135,104 +166,11 @@ export default function OnboardingScreen() {
         {currentIndex === slides.length - 1 && (
           <AuthButton
             title="Sign In"
-            onPress={() => router.replace('/(auth)/sign-in')}
+            onPress={() => router.replace('/(auth)/login')}
             variant="outline"
-            style={styles.signInButton}
           />
         )}
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background.primary,
-  },
-  skipButton: {
-    position: 'absolute',
-    top: 50,
-    right: Spacing.lg,
-    zIndex: 10,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-  },
-  skipText: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.text.secondary,
-    fontWeight: '500',
-  },
-  slide: {
-    width,
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-  },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  imagePlaceholder: {
-    width: 280,
-    height: 280,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  illustrationCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: Colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  illustrationText: {
-    fontSize: 80,
-  },
-  content: {
-    width: '100%',
-    paddingBottom: Spacing['2xl'],
-  },
-  title: {
-    fontSize: Typography.fontSize['2xl'],
-    fontWeight: 'bold',
-    color: Colors.text.primary,
-    textAlign: 'center',
-    marginBottom: Spacing.md,
-  },
-  description: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Spacing.lg,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.border,
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    width: 24,
-    backgroundColor: Colors.primary,
-  },
-  buttonContainer: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.md,
-  },
-  signInButton: {
-    marginTop: Spacing.sm,
-  },
-});

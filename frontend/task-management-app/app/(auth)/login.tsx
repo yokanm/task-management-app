@@ -1,50 +1,44 @@
-import React from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { AuthInput } from '@/components/auth/AuthInput';
+import { AuthButton } from '@/components/auth/AuthButton';
 import { useTheme } from '../../hooks/useTheme';
-import { AuthInput } from '../../components/auth/AuthInput';
-import { AuthButton } from '../../components/auth/AuthButton';
-import { useAuthStore } from '../../store/authStore';
-import { authAPI } from '../../services/api';
-import { useFormValidation } from '../../hooks/useFormValidation';
-import { loginSchema, type LoginInput } from '../../utils/validationSchemas';
+import { useAuthStore } from '@/store/authStore';
+import { loginSchema } from '../../validation/auth.validation';
 
-export default function SignInScreen() {
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
   const router = useRouter();
   const { colors } = useTheme();
-  const { setUser, setTokens, setLoading } = useAuthStore();
+  const { login, isLoading } = useAuthStore();
 
-  const {
-    values,
-    errors,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    isSubmitting,
-  } = useFormValidation<LoginInput>({
-    schema: loginSchema,
-    onSubmit: async (data) => {
-      setLoading(true);
-      
-      try {
-        const response = await authAPI.login(data);
-        const { user, accessToken, refreshToken } = response.data;
+  const handleLogin = async () => {
+    // Validate with Zod
+    const result = loginSchema.safeParse({ email, password });
+    
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((err) => {
+        if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
 
-        setUser(user);
-        setTokens(accessToken, refreshToken);
-        
-        // Navigation will be handled by root layout
-        // router.replace('/(tabs)');
-      } catch (error: any) {
-        console.error('Login error:', error);
-        const errorMessage = error.response?.data?.error || 'Login failed. Please try again.';
-        Alert.alert('Login Failed', errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    },
-    mode: 'onChange',
-  });
+    // Clear errors and submit
+    setErrors({});
+    const response = await login(email, password);
+    
+    if (!response.success) {
+      Alert.alert('Login Failed', response.error || 'Invalid credentials');
+    } else {
+      router.replace('/(tabs)/index');
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -57,7 +51,6 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View className="mb-10">
           <Text 
             className="text-3xl font-bold mb-1"
@@ -73,14 +66,15 @@ export default function SignInScreen() {
           </Text>
         </View>
 
-        {/* Form */}
         <View className="mb-8">
           <AuthInput
             label="Email"
             placeholder="Enter your email"
-            value={values.email || ''}
-            onChangeText={(text) => handleChange('email', text)}
-            onBlur={() => handleBlur('email')}
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+            }}
             error={errors.email}
             icon="mail-outline"
             keyboardType="email-address"
@@ -91,9 +85,11 @@ export default function SignInScreen() {
           <AuthInput
             label="Password"
             placeholder="Enter your password"
-            value={values.password || ''}
-            onChangeText={(text) => handleChange('password', text)}
-            onBlur={() => handleBlur('password')}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
+            }}
             error={errors.password}
             icon="lock-closed-outline"
             isPassword
@@ -101,7 +97,6 @@ export default function SignInScreen() {
             autoComplete="password"
           />
 
-          {/* Forgot Password */}
           <TouchableOpacity className="self-end mb-6">
             <Text 
               className="text-sm font-medium"
@@ -111,14 +106,13 @@ export default function SignInScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Sign In Button */}
           <AuthButton
-            title="Sign In"
-            onPress={handleSubmit}
-            isLoading={isSubmitting}
+            title="Log In"
+            onPress={handleLogin}
+            isLoading={isLoading}
+            disabled={isLoading}
           />
 
-          {/* Divider */}
           <View className="flex-row items-center my-6">
             <View className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
             <Text className="text-sm mx-4" style={{ color: colors.textSecondary }}>
@@ -127,7 +121,6 @@ export default function SignInScreen() {
             <View className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
           </View>
 
-          {/* Social Sign In */}
           <AuthButton
             title="Sign In with Google"
             variant="outline"
@@ -135,7 +128,6 @@ export default function SignInScreen() {
           />
         </View>
 
-        {/* Sign Up Link */}
         <View className="flex-row justify-center items-center mt-auto">
           <Text className="text-base" style={{ color: colors.textSecondary }}>
             Don&apos;t have an account?{' '}
