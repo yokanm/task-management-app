@@ -54,7 +54,7 @@ export default function RootLayout() {
         }
       }
     }, 100);
-  }, [isReady, user, token, segments]);
+  }, [router, isReady, user, token, segments]);
 
   if (!isReady) {
     return (

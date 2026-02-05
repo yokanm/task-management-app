@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput as RNTextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput as RNTextInput, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../hooks/useTheme';
 import { AuthInput } from '../../components/auth/AuthInput';
 import { AuthButton } from '../../components/auth/AuthButton';
@@ -12,7 +13,7 @@ export default function AddTaskScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [projects, setProjects] = useState<any[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<string>(''); // Empty = Inbox
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form values
@@ -20,8 +21,13 @@ export default function AddTaskScreen() {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'To do' | 'In Progress' | 'Completed'>('To do');
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
-  const [dueDate, setDueDate] = useState('');
-  const [dueTime, setDueTime] = useState('');
+  
+  // Date/Time with pickers
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dueTime, setDueTime] = useState<Date | null>(null);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -31,56 +37,63 @@ export default function AddTaskScreen() {
   const fetchProjects = async () => {
     try {
       const response = await projectsAPI.getProjects();
-      setProjects(response.data.data);
+      setProjects(response.data || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
     }
   };
 
+  const formatDate = (date: Date | null): string => {
+    if (!date) return '';
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+  };
+
+  const formatTime = (date: Date | null): string => {
+    if (!date) return '';
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDueDate(selectedDate);
+    }
+  };
+
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (selectedTime) {
+      setDueTime(selectedTime);
+    }
+  };
+
   const handleSubmit = async () => {
-    // Validate
-    const result = taskSchema.safeParse({
-      title,
-      description,
-      status,
-      priority,
-      dueDate,
-      dueTime,
-    });
-
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          fieldErrors[issue.path[0] as string] = issue.message;
-        }
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-
-    if (!selectedProject) {
-      Alert.alert('Error', 'Please select a project');
-      return;
-    }
-
     setIsSubmitting(true);
     setErrors({});
 
     try {
+      // Build task data - parent is now OPTIONAL
       const taskData: any = {
         title,
         status,
         priority,
-        parent: {
-          id: selectedProject,
-          type: 'Project',
-        },
       };
 
+      // Add optional fields
       if (description) taskData.description = description;
-      if (dueDate) taskData.dueDate = dueDate;
-      if (dueTime) taskData.dueTime = dueTime;
+      if (dueDate) taskData.dueDate = formatDate(dueDate);
+      if (dueTime) taskData.dueTime = formatTime(dueTime);
+
+      // Only add parent if a project is selected
+      // If not selected, backend will default to Inbox
+      if (selectedProject) {
+        taskData.parent = {
+          id: selectedProject,
+          type: 'Project',
+        };
+      }
 
       await tasksAPI.createTask(taskData);
       
@@ -89,7 +102,7 @@ export default function AddTaskScreen() {
       ]);
     } catch (error: any) {
       console.error('Error creating task:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create task';
+      const errorMessage = error.message || 'Failed to create task';
       Alert.alert('Error', errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -164,25 +177,45 @@ export default function AddTaskScreen() {
               numberOfLines={4}
             />
           </View>
-          {errors.description && (
-            <Text className="text-xs mt-1 ml-1" style={{ color: colors.error }}>
-              {errors.description}
-            </Text>
-          )}
         </View>
 
-        {/* Project Selection */}
+        {/* Project Selection - OPTIONAL */}
         <View className="mb-4">
           <Text className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-            Project * {!selectedProject && <Text style={{ color: colors.error }}>(Required)</Text>}
+            Project <Text style={{ color: colors.textSecondary }}>(Optional - defaults to Inbox)</Text>
           </Text>
-          {projects.length === 0 ? (
-            <View className="p-4 rounded-xl" style={{ backgroundColor: colors.inputBackground }}>
-              <Text style={{ color: colors.textSecondary }}>
-                No projects available. Create a project first.
+          
+          {/* Inbox Option */}
+          <TouchableOpacity
+            className="py-3 px-4 rounded-xl mb-2"
+            style={{
+              backgroundColor: selectedProject === '' 
+                ? colors.primary 
+                : colors.inputBackground,
+            }}
+            onPress={() => setSelectedProject('')}
+          >
+            <View className="flex-row items-center">
+              <Ionicons 
+                name="mail-outline" 
+                size={20} 
+                color={selectedProject === '' ? colors.white : colors.textPrimary}
+              />
+              <Text 
+                className="text-sm font-semibold ml-2"
+                style={{ 
+                  color: selectedProject === '' 
+                    ? colors.white 
+                    : colors.textPrimary 
+                }}
+              >
+                Project (Default)
               </Text>
             </View>
-          ) : (
+          </TouchableOpacity>
+
+          {/* Project Options */}
+          {projects.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-2">
               {projects.map((project) => (
                 <TouchableOpacity
@@ -263,43 +296,76 @@ export default function AddTaskScreen() {
           </View>
         </View>
 
-        {/* Due Date & Time */}
-        <View className="flex-row gap-4 mb-6">
-          <View className="flex-1">
-            <AuthInput
-              label="Due Date"
-              placeholder="YYYY-MM-DD"
-              value={dueDate}
-              onChangeText={(text) => {
-                setDueDate(text);
-                if (errors.dueDate) setErrors(prev => ({ ...prev, dueDate: '' }));
-              }}
-              error={errors.dueDate}
-              icon="calendar-outline"
-            />
-          </View>
-          
-          <View className="flex-1">
-            <AuthInput
-              label="Due Time"
-              placeholder="HH:MM"
-              value={dueTime}
-              onChangeText={(text) => {
-                setDueTime(text);
-                if (errors.dueTime) setErrors(prev => ({ ...prev, dueTime: '' }));
-              }}
-              error={errors.dueTime}
-              icon="time-outline"
-            />
-          </View>
+        {/* Due Date - With Native Picker */}
+        <View className="mb-4">
+          <Text className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+            Due Date
+          </Text>
+          <TouchableOpacity
+            className="flex-row items-center p-4 rounded-xl"
+            style={{ backgroundColor: colors.inputBackground }}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+            <Text className="flex-1 ml-2" style={{ color: dueDate ? colors.textPrimary : colors.placeholderText }}>
+              {dueDate ? formatDate(dueDate) : 'Select date'}
+            </Text>
+            {dueDate && (
+              <TouchableOpacity onPress={() => setDueDate(null)}>
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
         </View>
+
+        {/* Due Time - With Native Picker */}
+        <View className="mb-6">
+          <Text className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+            Due Time
+          </Text>
+          <TouchableOpacity
+            className="flex-row items-center p-4 rounded-xl"
+            style={{ backgroundColor: colors.inputBackground }}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+            <Text className="flex-1 ml-2" style={{ color: dueTime ? colors.textPrimary : colors.placeholderText }}>
+              {dueTime ? formatTime(dueTime) : 'Select time'}
+            </Text>
+            {dueTime && (
+              <TouchableOpacity onPress={() => setDueTime(null)}>
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Date Picker Modal */}
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueDate || new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+          />
+        )}
+
+        {/* Time Picker Modal */}
+        {showTimePicker && (
+          <DateTimePicker
+            value={dueTime || new Date()}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleTimeChange}
+          />
+        )}
 
         {/* Create Button */}
         <AuthButton
           title="Create Task"
           onPress={handleSubmit}
           isLoading={isSubmitting}
-          disabled={!selectedProject || isSubmitting}
+          disabled={isSubmitting}
         />
       </ScrollView>
     </View>

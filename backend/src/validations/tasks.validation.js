@@ -52,10 +52,8 @@ export const createTaskSchema = z.object({
         errorMap: () => ({
           message: 'Parent type must be either Project or TaskGroup',
         }),
-      }),
-    }, {
-      required_error: 'Parent is required - task must belong to a Project or TaskGroup',
-    }),
+      }).default('Project'),
+    }).optional().default({ type: 'Project' }),
 
     tags: z
       .array(z.string().trim().min(1, 'Tag cannot be empty'))

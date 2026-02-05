@@ -31,12 +31,12 @@ const taskSchema = new Schema(
     parent: {
       id: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
+        required: false,
         refPath: 'parent.type'
       },
       type: {
         type: String,
-        required: true,
+        required: false,
         enum: ['Project', 'TaskGroup']
       }
     },
@@ -67,6 +67,7 @@ const taskSchema = new Schema(
 // IMPORTANT: Add index for fast queries
 taskSchema.index({ 'parent.id': 1, 'parent.type': 1 });
 taskSchema.index({ user: 1, 'parent.id': 1 });
+taskSchema.index({ user: 1 });
 
 const Tasks = mongoose.model('Tasks', taskSchema);
 
