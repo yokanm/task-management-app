@@ -1,25 +1,24 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../hooks/useTheme';
+import { Text } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
 
-export default function TabLayout() {
+export default function TabsLayout() {
   const { colors } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.cardBackground,
-          borderTopWidth: 1,
           borderTopColor: colors.border,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 1,
+          paddingBottom: 5,
+          paddingTop: 5,
           height: 60,
         },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
@@ -30,26 +29,26 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 24, opacity: focused ? 1 : 0.6 }}>🏠</Text>
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="tasks"
         options={{
-          title: 'Today',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
+          title: 'Tasks',
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 24, opacity: focused ? 1 : 0.6 }}>📅</Text>
           ),
         }}
       />
       <Tabs.Screen
-        name="add-task"
+        name="analytics"
         options={{
-          title: 'Add',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={size + 8} color={color} />
+          title: 'Analytics',
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 24, opacity: focused ? 1 : 0.6 }}>📊</Text>
           ),
         }}
       />
@@ -57,8 +56,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Text style={{ fontSize: 24, opacity: focused ? 1 : 0.6 }}>⚙️</Text>
           ),
         }}
       />

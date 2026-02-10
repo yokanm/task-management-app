@@ -121,19 +121,6 @@ export default function Register() {
             autoCapitalize="none"
             autoComplete="password-new"
           />
-
-          {/* <AuthInput
-            label="Confirm Password"
-            placeholder="Confirm your password"
-            value={isSetPasswordVisible.toString()}
-            onChangeText={(text) => setIsPasswordVisible(text)}
-            // onBlur={() => handleBlur('confirmPassword')}
-            // error={errors.confirmPassword}
-            icon="lock-closed-outline"
-            isPassword
-            autoCapitalize="none"
-            autoComplete="password-new"
-          /> */}
          
           {/* Terms and Conditions */}
           <View className="mb-6">

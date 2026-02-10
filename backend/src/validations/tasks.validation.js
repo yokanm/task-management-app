@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { objectIdSchema, timeSchema } from '../utils/helperSchemas.js';
 
-// Create task validation schema with parent field
+// FIXED: Create task validation schema with proper optional parent field
 export const createTaskSchema = z.object({
   body: z.object({
     title: z
@@ -45,21 +45,27 @@ export const createTaskSchema = z.object({
 
     dueTime: timeSchema.optional().nullable(),
 
-    // NEW: Parent field instead of separate project/taskGroup
+    // CRITICAL FIX: Make parent truly optional without a broken default
+    // If parent is provided, both id and type are required
+    // If parent is not provided, the task will have no parent (standalone task)
     parent: z.object({
       id: objectIdSchema,
       type: z.enum(['Project', 'TaskGroup'], {
         errorMap: () => ({
           message: 'Parent type must be either Project or TaskGroup',
         }),
-      }).default('Project'),
-    }).optional().default({ type: 'Project' }),
+      }),
+    }).optional(),  // ✅ Truly optional, no broken default
 
     tags: z
       .array(z.string().trim().min(1, 'Tag cannot be empty'))
       .max(10, 'Maximum 10 tags allowed')
       .optional()
       .default([]),
+
+    isCompleted: z.boolean().optional().default(false),
+
+    completedAt: z.coerce.date().optional().nullable(),
   }),
 });
 
@@ -88,7 +94,7 @@ export const updateTaskSchema = z.object({
 
     dueTime: timeSchema.optional().nullable(),
 
-    // NEW: Parent field (optional for updates)
+    // Parent field (optional for updates)
     parent: z.object({
       id: objectIdSchema,
       type: z.enum(['Project', 'TaskGroup']),

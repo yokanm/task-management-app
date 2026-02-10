@@ -1,78 +1,80 @@
-
-import { Router } from "express";
-import { 
-    getProfile,
-    updateProfile,
-    getUserById,
-    changePassword,
-    getPreferences,
-    updatePreferences,
-    deleteAccount
-} from "../controllers/users.controller.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
-import { validate } from "../middleware/validateMiddleware.js";
-import { 
-    updateProfileSchema,
-    changePasswordSchema,
-    updatePreferencesSchema,
-    userIdSchema,
-    deleteAccountSchema
-} from "../validations/user.validation.js";
+import { Router } from 'express';
+import {
+  getProfile,
+  updateProfile,
+  getUserById,
+  changePassword,
+  getPreferences,
+  updatePreferences,
+  deleteAccount,
+} from '../controllers/users.controller.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+import { validate } from '../middleware/validateMiddleware.js';
+import {
+  updateProfileSchema,
+  changePasswordSchema,
+  updatePreferencesSchema,
+  userIdSchema,
+  deleteAccountSchema,
+} from '../validations/user.validation.js';
 
 const router = Router();
 
-
 /**
- * @route   GET /api/v1/users/profile
- * @desc    Get current user profile
- * @access  Private
+ * IMPORTANT: Named routes (/profile, /change-password, /preferences)
+ * MUST be declared before the dynamic /:id route.
+ * Express matches routes top-to-bottom; if /:id is first, Express would
+ * treat 'profile', 'change-password', and 'preferences' as ID values.
  */
+
+// --- Static named routes first ---
+
+/** GET /api/v1/users/profile — Get current user profile */
 router.get('/api/v1/users/profile', authMiddleware, getProfile);
 
-/**
- * @route   PUT /api/v1/users/profile
- * @desc    Update user profile
- * @access  Private
- */
-router.put('/api/v1/users/profile', authMiddleware, validate(updateProfileSchema), updateProfile);
+/** PUT /api/v1/users/profile — Update current user profile */
+router.put(
+  '/api/v1/users/profile',
+  authMiddleware,
+  validate(updateProfileSchema),
+  updateProfile
+);
 
-/**
- * @route   GET /api/v1/users/:id
- * @desc    Get user by ID (for viewing collaborators)
- * @access  Private
- */
-router.get('/api/v1/users/:id', authMiddleware, validate(userIdSchema), getUserById);
+/** PUT /api/v1/users/change-password — Change password */
+router.put(
+  '/api/v1/users/change-password',
+  authMiddleware,
+  validate(changePasswordSchema),
+  changePassword
+);
 
-
-/**
- * @route   PUT /api/v1/users/change-password
- * @desc    Change user password
- * @access  Private
- */
-router.put('/api/v1/users/change-password', authMiddleware, validate(changePasswordSchema), changePassword);
-
-
-
-/**
- * @route   GET /api/v1/users/preferences
- * @desc    Get user preferences
- * @access  Private
- */
+/** GET /api/v1/users/preferences — Get preferences */
 router.get('/api/v1/users/preferences', authMiddleware, getPreferences);
 
-/**
- * @route   PUT /api/v1/users/preferences
- * @desc    Update user preferences
- * @access  Private
- */
-router.put('/api/v1/users/preferences', authMiddleware, validate(updatePreferencesSchema), updatePreferences);
+/** PUT /api/v1/users/preferences — Update preferences */
+router.put(
+  '/api/v1/users/preferences',
+  authMiddleware,
+  validate(updatePreferencesSchema),
+  updatePreferences
+);
 
+/** DELETE /api/v1/users/account — Soft-delete account */
+router.delete(
+  '/api/v1/users/account',
+  authMiddleware,
+  validate(deleteAccountSchema),
+  deleteAccount
+);
 
-/**
- * @route   DELETE /api/v1/users/account
- * @desc    Delete user account
- * @access  Private
- */
-router.delete('/api/v1/users/account', authMiddleware, validate(deleteAccountSchema), deleteAccount);
+// --- Dynamic route last ---
+
+/** GET /api/v1/users/:id — Get any user by ID (must be last) */
+router.get(
+  '/api/v1/users/:id',
+  authMiddleware,
+  validate(userIdSchema),
+  getUserById
+);
 
 export default router;

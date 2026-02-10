@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuthStore } from '../../store/authStore';
 import { AuthButton } from '../../components/auth/AuthButton';
 
 const { width } = Dimensions.get('window');
@@ -43,6 +44,7 @@ const slides: OnboardingSlide[] = [
 export default function OnboardingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { setHasSeenOnboarding } = useAuthStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -61,12 +63,14 @@ export default function OnboardingScreen() {
     handleGetStarted();
   };
 
-  const handleGetStarted = () => {
+  const handleGetStarted = async () => {
+    await setHasSeenOnboarding(true);
     router.replace('/(auth)/login');
   };
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={{ width, flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
+      {/* Image placeholder */}
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
         <View style={{ width: 280, height: 280, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{
@@ -82,6 +86,7 @@ export default function OnboardingScreen() {
         </View>
       </View>
 
+      {/* Content */}
       <View style={{ width: '100%', paddingBottom: 40 }}>
         <Text style={{
           fontSize: 28,
@@ -106,6 +111,7 @@ export default function OnboardingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Skip button */}
       <TouchableOpacity 
         style={{
           position: 'absolute',
@@ -122,6 +128,7 @@ export default function OnboardingScreen() {
         </Text>
       </TouchableOpacity>
 
+      {/* Slides */}
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -136,6 +143,7 @@ export default function OnboardingScreen() {
         keyExtractor={(item) => item.id}
       />
 
+      {/* Pagination dots */}
       <View style={{
         flexDirection: 'row',
         justifyContent: 'center',
@@ -156,6 +164,7 @@ export default function OnboardingScreen() {
         ))}
       </View>
 
+      {/* Buttons */}
       <View style={{ paddingHorizontal: 40, paddingBottom: 40, gap: 16 }}>
         <AuthButton
           title={currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}

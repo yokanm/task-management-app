@@ -102,12 +102,25 @@ const getProject = async (req, res) => {
   }
 };
 
-// @desc    Create new project
-// @route   POST /api/projects
+/// @desc    Create new project
+// @route   POST /api/v1/project
 // @access  Private
 const createProject = async (req, res) => {
   try {
     req.body.user = req.user.id;
+
+    // ✅ FIX: Auto-create taskGroup if not provided
+    if (!req.body.taskGroup) {
+      const defaultTaskGroup = await TaskGroup.create({
+        name: req.body.name || 'Default Group',
+        icon: req.body.logo || '📋',
+        color: req.body.color || '#6C5DD3',
+        user: req.user.id
+      });
+      req.body.taskGroup = defaultTaskGroup._id;
+      
+      console.log('Auto-created taskGroup:', defaultTaskGroup._id);
+    }
 
     const project = await Project.create(req.body);
 
@@ -116,13 +129,13 @@ const createProject = async (req, res) => {
       data: project,
     });
   } catch (error) {
+    console.error('Create project error:', error);
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 // @desc    Update project
 // @route   PUT /api/projects/:id
 // @access  Private

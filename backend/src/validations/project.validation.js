@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { objectIdSchema, hexColorSchema } from '../utils/helperSchemas.js';
 
-// Create project validation schema
+/**
+ * Create project validation schema.
+ *
+ * NOTE: `taskGroup` is an optional ObjectId reference.
+ * If omitted, the controller auto-creates a default TaskGroup.
+ * The old string-enum approach ('Work' | 'Personal' | …) was wrong
+ * because the model stores a MongoDB ObjectId, not a string label.
+ */
 export const createProjectSchema = z.object({
   body: z
     .object({
@@ -21,15 +28,14 @@ export const createProjectSchema = z.object({
         .optional()
         .or(z.literal('')),
 
-      logo: z.string().url('Invalid logo URL').optional().or(z.literal('')),
+      logo: z
+        .string()
+        .url('Invalid logo URL')
+        .optional()
+        .or(z.literal('')),
 
-      taskGroup: z
-        .enum(['Work', 'Personal', 'Study', 'Other'], {
-          errorMap: () => ({
-            message: 'Task group must be one of: Work, Personal, Study, Other',
-          }),
-        })
-        .default('Work'),
+      // Accept a valid 24-char hex ObjectId (controller auto-creates if absent)
+      taskGroup: objectIdSchema.optional(),
 
       startDate: z.coerce.date({
         required_error: 'Start date is required',
@@ -49,7 +55,7 @@ export const createProjectSchema = z.object({
     }),
 });
 
-// Update project validation schema
+/** Update project validation schema */
 export const updateProjectSchema = z.object({
   body: z
     .object({
@@ -67,9 +73,13 @@ export const updateProjectSchema = z.object({
         .optional()
         .or(z.literal('')),
 
-      logo: z.string().url('Invalid logo URL').optional().or(z.literal('')),
+      logo: z
+        .string()
+        .url('Invalid logo URL')
+        .optional()
+        .or(z.literal('')),
 
-      taskGroup: z.enum(['Work', 'Personal', 'Study', 'Other']).optional(),
+      taskGroup: objectIdSchema.optional(),
 
       startDate: z.coerce.date().optional(),
 
@@ -95,7 +105,7 @@ export const updateProjectSchema = z.object({
   }),
 });
 
-// Project ID param validation
+/** Project ID param-only schema (for GET / DELETE by ID) */
 export const projectIdSchema = z.object({
   params: z.object({
     id: objectIdSchema,

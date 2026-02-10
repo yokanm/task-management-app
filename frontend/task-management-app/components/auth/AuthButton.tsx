@@ -1,7 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, TouchableOpacityProps, ViewStyle } from 'react-native';
-import { useTheme } from '../../hooks/useTheme';
-import { useAuthStore } from '@/store/authStore';
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  TouchableOpacityProps,
+  ViewStyle,
+  StyleSheet,
+} from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AuthButtonProps extends TouchableOpacityProps {
   title: string;
@@ -11,6 +17,11 @@ interface AuthButtonProps extends TouchableOpacityProps {
   style?: ViewStyle;
 }
 
+/**
+ * AuthButton
+ * Reusable button component for auth screens.
+ * Supports primary, secondary, outline, and text variants.
+ */
 export const AuthButton: React.FC<AuthButtonProps> = ({
   title,
   variant = 'primary',
@@ -20,27 +31,23 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   disabled,
   ...props
 }) => {
-
-  const {user, isLoading: isAuthLoading} = useAuthStore();
   const { colors } = useTheme();
+  const isDisabled = disabled || isLoading;
 
-  const getButtonStyle = () => {
-    if (disabled || isLoading) {
+  const getButtonStyle = (): ViewStyle => {
+    if (isDisabled) {
       return {
         backgroundColor: colors.cardBackground,
         borderColor: colors.border,
+        borderWidth: 1,
       };
     }
 
     switch (variant) {
       case 'primary':
-        return {
-          backgroundColor: colors.primary,
-        };
+        return { backgroundColor: colors.primary };
       case 'secondary':
-        return {
-          backgroundColor: `${colors.primary}20`, // 20% opacity
-        };
+        return { backgroundColor: `${colors.primary}20` };
       case 'outline':
         return {
           backgroundColor: 'transparent',
@@ -48,47 +55,51 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
           borderWidth: 1.5,
         };
       case 'text':
-        return {
-          backgroundColor: 'transparent',
-        };
+        return { backgroundColor: 'transparent' };
       default:
-        return {
-          backgroundColor: colors.primary,
-        };
+        return { backgroundColor: colors.primary };
     }
   };
 
-  const getTextStyle = () => {
-    if (disabled || isLoading) {
-      return { color: colors.textSecondary };
-    }
+  const getTextColor = (): string => {
+    if (isDisabled) return colors.textSecondary;
 
     switch (variant) {
       case 'primary':
-        return { color: colors.white };
+        return '#FFFFFF'; // always white on primary fill
       case 'secondary':
       case 'outline':
       case 'text':
-        return { color: colors.primary };
+        return colors.primary;
       default:
-        return { color: colors.white };
+        return '#FFFFFF';
     }
   };
 
   return (
     <TouchableOpacity
-      className={`h-14 rounded-xl justify-center items-center px-6 ${fullWidth ? 'w-full' : ''} ${variant === 'text' ? 'h-auto py-2' : ''}`}
-      style={[getButtonStyle(), style]}
-      disabled={disabled || isLoading}
+      style={[
+        styles.base,
+        fullWidth && styles.fullWidth,
+        variant === 'text' && styles.textVariant,
+        getButtonStyle(),
+        style,
+      ]}
+      disabled={isDisabled}
       activeOpacity={0.7}
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.black : colors.primary} />
+        <ActivityIndicator
+          color={variant === 'primary' ? '#FFFFFF' : colors.primary}
+        />
       ) : (
-        <Text 
-          className={`text-base font-semibold ${variant === 'text' ? 'text-sm' : ''}`}
-          style={getTextStyle()}
+        <Text
+          style={[
+            styles.label,
+            variant === 'text' && styles.textLabel,
+            { color: getTextColor() },
+          ]}
         >
           {title}
         </Text>
@@ -96,3 +107,27 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  base: {
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  textVariant: {
+    height: 'auto' as any,
+    paddingVertical: 8,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  textLabel: {
+    fontSize: 14,
+  },
+});

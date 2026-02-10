@@ -151,10 +151,49 @@ export const THEME_SCHEMES = {
       warning: "#ffa726",
       info: "#42a5f5",
     }
+  },
+
+  // Task Manager Purple Theme - From the design
+  purple: {
+    name: 'Purple',
+    light: {
+      primary: "#7C3AED",
+      textPrimary: "#111827",
+      textSecondary: "#6B7280",
+      textDark: "#000000",
+      placeholderText: "#9CA3AF",
+      background: "#F9FAFB",
+      cardBackground: "#FFFFFF",
+      inputBackground: "#F3F4F6",
+      border: "#E5E7EB",
+      white: "#FFFFFF",
+      black: "#000000",
+      success: "#10B981",
+      error: "#EF4444",
+      warning: "#F59E0B",
+      info: "#3B82F6",
+    },
+    dark: {
+      primary: "#8B5CF6",
+      textPrimary: "#F9FAFB",
+      textSecondary: "#D1D5DB",
+      textDark: "#F3F4F6",
+      placeholderText: "#9CA3AF",
+      background: "#111827",
+      cardBackground: "#1F2937",
+      inputBackground: "#374151",
+      border: "#4B5563",
+      white: "#000000",
+      black: "#FFFFFF",
+      success: "#34D399",
+      error: "#F87171",
+      warning: "#FBBF24",
+      info: "#60A5FA",
+    }
   }
 };
 
-export const DEFAULT_THEME = 'nature';
+export const DEFAULT_THEME = 'purple'; // Changed to purple as default
 export const DEFAULT_MODE = 'light';
 
 // Typography

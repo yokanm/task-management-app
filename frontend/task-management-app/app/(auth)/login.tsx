@@ -36,7 +36,7 @@ export default function Login() {
     if (!response.success) {
       Alert.alert('Login Failed', response.error || 'Invalid credentials');
     } else {
-      router.replace('/(tabs)/index');
+      router.replace('/(tabs)');
     }
   };
 
