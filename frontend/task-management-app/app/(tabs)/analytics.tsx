@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { useTaskStore } from '@/store/taskStore';
 import Svg, { Circle } from 'react-native-svg';
-
-const { width } = Dimensions.get('window');
 
 // Simple Circular Progress for Analytics
 const AnalyticsCircle = ({ 
@@ -71,7 +69,7 @@ export default function AnalyticsScreen() {
   useEffect(() => {
     fetchTasks();
     fetchProjects();
-  }, []);
+  }, [fetchProjects, fetchTasks]);
 
   useEffect(() => {
     if (tasks.length > 0) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
@@ -12,7 +12,7 @@ export default function Index() {
   useEffect(() => {
     // Load auth state from AsyncStorage on mount
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   // Show loading while checking authentication
   if (isCheckingAuth) {

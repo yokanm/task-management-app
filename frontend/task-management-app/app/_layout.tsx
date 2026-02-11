@@ -2,7 +2,7 @@ import SafeScreen from '@/components/SafeScreen';
 import { useAuthStore } from '@/store/authStore';
 
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect} from 'react';
+import { useEffect, useMemo } from 'react';
 import { StatusBar} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -10,17 +10,14 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { isAuthenticated, hasSeenOnboarding, isCheckingAuth } = useAuthStore();
-  
- 
+  const authenticated = useMemo(() => isAuthenticated(), [isAuthenticated]);
 
-    useEffect(() => {
+  useEffect(() => {
     // Don't navigate while checking auth
     if (isCheckingAuth) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
-    const authenticated = isAuthenticated();
-
     // Only navigate if we're not already in the correct group
     if (!authenticated) {
       if (inTabsGroup) {
@@ -37,7 +34,7 @@ export default function RootLayout() {
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated(), hasSeenOnboarding, segments, isCheckingAuth]);
+  }, [authenticated, hasSeenOnboarding, isCheckingAuth, router, segments]);
   
 
   return (

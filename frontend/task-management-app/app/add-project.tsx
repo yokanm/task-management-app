@@ -53,7 +53,7 @@ export default function AddProjectScreen() {
   // ── Load task groups ──────────────────────────────────────────────────
   useEffect(() => {
     fetchTaskGroups();
-  }, []);
+  }, [fetchTaskGroups]);
 
   // ── Helpers ───────────────────────────────────────────────────────────
   const formatDate = (date: Date) =>
