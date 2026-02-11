@@ -113,7 +113,7 @@ export default function HomeScreen() {
     fetchTasks();
     fetchProjects();
     fetchTaskGroups();
-  }, []);
+  }, [fetchProjects, fetchTaskGroups, fetchTasks, loadFromStorage]);
 
   const onRefresh = async () => {
     setRefreshing(true);

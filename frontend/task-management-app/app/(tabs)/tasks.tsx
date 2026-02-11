@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -79,12 +79,12 @@ export default function TasksScreen() {
   const [selectedDateIdx, setSelectedDateIdx] = useState(2); // today
   const [refreshing, setRefreshing] = useState(false);
 
-  const dates = buildDateRange();
+  const dates = useMemo(() => buildDateRange(), []);
 
   useEffect(() => {
     loadFromStorage();
     fetchTasks();
-  }, []);
+  }, [fetchTasks, loadFromStorage]);
 
   const onRefresh = async () => {
     setRefreshing(true);
